@@ -91,8 +91,24 @@ GPIO15 = RTC_GPIO13
 //-------------------------------------------------------
 // board details
 //-------------------------------------------------------
+//-- ESP32-Dev
+#if defined MODULE_ESP32_DEV
+    #ifndef ARDUINO_ESP32_DEV // ARDUINO_BOARD != ARDUINO_ESP32_DEV
+	      #error Select board ARDUINO_ESP32_DEV!
+    #endif
+
+    #undef USE_SERIAL_DBG1
+    #undef USE_SERIAL1_DBG
+    #define USE_SERIAL2_DBG
+
+    #ifndef LED_IO
+        #define LED_IO  2
+    #endif    
+    #define USE_LED
+
+
 //-- ESP32-PICO-KIT
-#if defined MODULE_ESP32_PICO_KIT // ARDUINO_ESP32_PICO, ARDUINO_BOARD = ESP32_PICO
+#elif defined MODULE_ESP32_PICO_KIT // ARDUINO_ESP32_PICO, ARDUINO_BOARD = ESP32_PICO
     #ifndef ARDUINO_ESP32_PICO // ARDUINO_BOARD != ESP32_PICO
 	      #error Select board ARDUINO_ESP32_PICO!
     #endif
@@ -206,6 +222,7 @@ GPIO15 = RTC_GPIO13
     #define NUMPIXELS  1
     #define PIN_NEOPIXEL  27
 
+
 //-- Generic
 #else
     #ifdef LED_IO  
@@ -261,7 +278,13 @@ GPIO15 = RTC_GPIO13
     #define DBG Serial
     #define DBG_PRINT(x) Serial.print(x)
     #define DBG_PRINTLN(x) Serial.println(x)
-    
+
+#elif defined USE_SERIAL2_DBG
+    #define SERIAL Serial2
+    #define DBG Serial
+    #define DBG_PRINT(x) Serial.print(x)
+    #define DBG_PRINTLN(x) Serial.println(x)
+
 #else    
     #define SERIAL Serial
     #define DBG_PRINT(x)
