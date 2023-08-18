@@ -14,6 +14,8 @@
 /*
 for more details on the boards see mlrs-wifi-bridge-boards.h
 
+- NodeMCU ESP32-Wroom-32
+  board: ESP32 Dev Module
 - Adafruit QT Py S2
   board: Adafruit QT Py ESP32-S2
 - M5Stack M5Stamp C3 Mate
@@ -42,7 +44,8 @@ for more details on the boards see mlrs-wifi-bridge-boards.h
 // Board
 // un-comment what you want
 //#define MODULE_GENERIC
-#define MODULE_ESP32_DEV
+//#define MODULE_ESP32_DEV
+#define MODULE_ESP32_DEV_INV
 //#define MODULE_ADAFRUIT_QT_PY_ESP32_S2
 //#define MODULE_M5STAMP_C3_MATE
 //#define MODULE_TTGO_MICRO32

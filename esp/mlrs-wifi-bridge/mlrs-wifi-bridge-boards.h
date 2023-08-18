@@ -91,7 +91,7 @@ GPIO15 = RTC_GPIO13
 //-------------------------------------------------------
 // board details
 //-------------------------------------------------------
-//-- ESP32-Dev
+//-- ESP32 Dev Module
 #if defined MODULE_ESP32_DEV
     #ifndef ARDUINO_ESP32_DEV // ARDUINO_BOARD != ARDUINO_ESP32_DEV
 	      #error Select board ARDUINO_ESP32_DEV!
@@ -100,6 +100,26 @@ GPIO15 = RTC_GPIO13
     #undef USE_SERIAL_DBG1
     #undef USE_SERIAL1_DBG
     #define USE_SERIAL2_DBG
+
+    #ifndef LED_IO
+        #define LED_IO  2
+    #endif    
+    #define USE_LED
+
+
+//-- ESP32 Dev Module (inverted serial)
+#elif defined MODULE_ESP32_DEV_INV
+    #ifndef ARDUINO_ESP32_DEV // ARDUINO_BOARD != ARDUINO_ESP32_DEV
+	      #error Select board ARDUINO_ESP32_DEV!
+    #endif
+
+    #undef USE_SERIAL_DBG1
+    #undef USE_SERIAL1_DBG
+    #define USE_SERIAL2_DBG
+
+    #define SERIAL_RXD  16 // = RX2
+    #define SERIAL_TXD  17 // = TX2
+    #define SERIAL_INVERT true
 
     #ifndef LED_IO
         #define LED_IO  2
