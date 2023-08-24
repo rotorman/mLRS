@@ -41,6 +41,9 @@ _estack = ORIGIN(RAM) + LENGTH(RAM); /* end of "RAM" Ram type memory */
 _Min_Heap_Size = 0x0 ; /* required amount of heap */
 _Min_Stack_Size = 0x400 ; /* required amount of stack */
 
+/* Main stack bottom */
+_main_stack_bottom = _estack - _Min_Stack_Size;
+
 /* Memories definition */
 MEMORY
 {

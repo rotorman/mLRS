@@ -649,7 +649,6 @@ int main_main(void)
 #ifdef BOARD_TEST_H
   main_test();
 #endif
-  stack_check_init();
   init_once();
 RESTARTCONTROLLER:
   init();

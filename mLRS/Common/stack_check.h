@@ -21,12 +21,12 @@
 // - https://mcuoneclipse.com/2016/11/01/getting-the-memory-range-of-sections-with-gnu-linker-files/
 // - https://stackoverflow.com/questions/55622174/is-accessing-the-value-of-a-linker-script-variable-undefined-behavior-in-c
 extern uint32_t _estack;
-extern uint32_t _Min_Stack_Size;
+extern uint32_t _main_stack_bottom;
 
 
 uint32_t stack_check_used(void)
 {
-    uint32_t ptr = (uint32_t)&_estack - (uint32_t)&_Min_Stack_Size;
+    uint32_t ptr = (uint32_t)&_main_stack_bottom;
     uint32_t end = (uint32_t)&_estack;
     while (ptr < end) {
         if (*(uint8_t*)ptr != 0xAA) break;
@@ -35,18 +35,5 @@ uint32_t stack_check_used(void)
 
     return (end - ptr);
 }
-
-
-void stack_check_init(void)
-{
-    // paint the stack memory area
-    uint32_t ptr = (uint32_t)&_estack - (uint32_t)&_Min_Stack_Size;
-    uint32_t end = (uint32_t)&_estack;
-    while (ptr < end) {
-        *(uint8_t*)ptr = 0xAA;
-        ptr++;
-    }
-}
-
 
 #endif // STACK_CHECK_H

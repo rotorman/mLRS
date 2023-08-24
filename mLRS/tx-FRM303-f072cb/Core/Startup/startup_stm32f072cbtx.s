@@ -85,6 +85,21 @@ LoopFillZerobss:
   cmp r2, r4
   bcc FillZerobss
 
+/*Paint Main Stack */
+  ldr  r0, =_estack
+  ldr  r1, = _main_stack_bottom
+  subs r0, r0, r1
+  movs r2, #0xAA
+PaintMainStack:
+  movs r3, #0
+LoopPaintMainStack:
+  cmp r3, r0
+  bge PaintDone
+  strb r2, [r1, r3]
+  adds r3, r3, #1
+  b LoopPaintMainStack
+PaintDone:
+
 /* Call static constructors */
   bl __libc_init_array
 /* Call the application's entry point.*/
