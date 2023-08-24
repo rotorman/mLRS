@@ -652,6 +652,7 @@ int main_main(void)
   init_once();
 RESTARTCONTROLLER:
   init();
+  stack_paint();
   DBG_MAIN(dbg.puts("\n\n\nHello\n\n");)
 
   serial.SetBaudRate(Config.SerialBaudrate);

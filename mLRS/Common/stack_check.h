@@ -36,4 +36,14 @@ uint32_t stack_check_used(void)
     return (end - ptr);
 }
 
+void stack_paint(void)
+{
+    // paint the stack memory area
+    uint32_t ptr = (uint32_t)&_main_stack_bottom;
+    uint32_t end = (uint32_t)&_estack;
+    while (ptr < end) {
+        *(uint8_t*)ptr = 0xAA;
+        ptr++;
+    }
+}
 #endif // STACK_CHECK_H
