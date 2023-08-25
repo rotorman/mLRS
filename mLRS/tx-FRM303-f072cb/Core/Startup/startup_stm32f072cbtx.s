@@ -85,7 +85,7 @@ LoopFillZerobss:
   cmp r2, r4
   bcc FillZerobss
 
-/*Paint Main Stack */
+/* Paint Main Stack */
   ldr  r0, =_estack
   ldr  r1, = _main_stack_bottom
   subs r0, r0, r1
