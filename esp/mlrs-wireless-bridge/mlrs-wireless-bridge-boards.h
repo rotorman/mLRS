@@ -304,6 +304,7 @@ GPIO15 = RTC_GPIO13
     #ifndef LED_IO
         #define LED_IO  2
     #endif
+    #define USE_LED
 
 
 //-- Generic
