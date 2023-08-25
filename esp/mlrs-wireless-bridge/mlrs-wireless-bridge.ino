@@ -137,7 +137,7 @@ int baudrate = 115200;
     #include <WiFi.h>
   #endif
 #elif (WIRELESS_PROTOCOL == 3) // Bluetooth
-  #if !defined(CONFIG_BT_ENABLED) || !defined(CONFIG_BLUEDROID_ENABLED)
+  #if !defined(CONFIG_BT_ENABLED)
     #error Bluetooth is not enabled !
   #endif
   #include <BluetoothSerial.h>
@@ -283,7 +283,7 @@ void setup()
   #endif
     udp.begin(port_udpcl);
 
-#elif (WIRELESS_PROTOCOL == 3) || !defined(MODULE_ESP01S)
+#elif (WIRELESS_PROTOCOL == 3)
 //-- Bluetooth
 
     SerialBT.begin(bluetooth_device_name);
@@ -418,7 +418,7 @@ void loop()
         udp.endPacket();
     }
 
-#elif (WIRELESS_PROTOCOL == 3) || !defined(MODULE_ESP01S)
+#elif (WIRELESS_PROTOCOL == 3)
 //-- Bluetooth
 
     int len = SerialBT.available();

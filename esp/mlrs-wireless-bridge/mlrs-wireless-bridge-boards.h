@@ -293,6 +293,10 @@ GPIO15 = RTC_GPIO13
         #error Select board Generic ESP8266 Module!
     #endif
 
+    #if (WIRELESS_PROTOCOL == 3) // Bluetooth
+        #error ESP8266 does not support Bluetooth!
+    #endif
+
     #undef USE_SERIAL_DBG1
     #undef USE_SERIAL1_DBG
     #undef USE_SERIAL2_DBG
