@@ -1,5 +1,5 @@
 //*******************************************************
-// mLRS Wireless Bridge
+// mLRS Wireless Bridge for ESP32
 // Copyright (c) www.olliw.eu, OlliW, OlliW42
 // License: GPL v3
 // https://www.gnu.org/licenses/gpl-3.0.de.html
@@ -32,6 +32,7 @@ List of supported modules, and board which need to be selected
 - M5Stack M5Stamp C3U Mate        board: ESP32C3 Dev Module
   ATTENTION: when the 5V pin is used, one MUST not also use the USB port, since they are connected internally!!
 - M5Stack ATOM Lite               board: M5Stack-ATOM
+- Ai-Thinker ESP-01S              board: Generic ESP8266 Module. Note WiFi only, no Bluetooth
 */
 
 //-------------------------------------------------------
@@ -52,6 +53,7 @@ List of supported modules, and board which need to be selected
 //#define MODULE_M5STAMP_PICO
 //#define MODULE_M5STAMP_PICO_FOR_FRSKY_R9M // uses inverted serial
 //#define MODULE_M5STACK_ATOM_LITE
+//#define MODULE_ESP01S
 
 // Serial level
 // uncomment, if you need inverted serial for a supported module
@@ -62,6 +64,9 @@ List of supported modules, and board which need to be selected
 // 0 = WiFi TCP, 1 = WiFi UDP, 2 = Wifi UDPCl, 3 = Bluetooth (not available for all boards)
 #define WIRELESS_PROTOCOL  1
 
+#if defined(MODULE_ESP01S)
+  #include <ESP8266WiFi.h>
+#endif
 
 //**********************//
 //*** WiFi settings ***//
@@ -91,8 +96,10 @@ int wifi_channel = 6;
 // WiFi power
 // comment out for default setting
 // Note: In order to find the possible options, right click on WIFI_POWER_19_5dBm and choose "Go To Definiton"
-#define WIFI_POWER  WIFI_POWER_2dBm // WIFI_POWER_MINUS_1dBm is the lowest possible, WIFI_POWER_19_5dBm is the max
+#define WIFI_POWER_ESP32  WIFI_POWER_2dBm // WIFI_POWER_MINUS_1dBm is the lowest possible, WIFI_POWER_19_5dBm is the max
 
+// comment out for default setting
+#define WIFI_POWER_ESP8266 0 // 0 (min) to 20.5 (max)
 
 //**************************//
 //*** Bluetooth settings ***//
@@ -122,7 +129,13 @@ int baudrate = 115200;
 //-------------------------------------------------------
 
 #if (WIRELESS_PROTOCOL <= 2) // WiFi
-  #include <WiFi.h>
+  #if defined(MODULE_ESP01S)
+    #if WIRELESS_PROTOCOL > 0 // UDP
+      #include <WiFiUdp.h>
+    #endif
+  #else
+    #include <WiFi.h>
+  #endif
 #elif (WIRELESS_PROTOCOL == 3) // Bluetooth
   #if !defined(CONFIG_BT_ENABLED) || !defined(CONFIG_BLUEDROID_ENABLED)
     #error Bluetooth is not enabled !
@@ -148,12 +161,12 @@ int baudrate = 115200;
 
 IPAddress ip_udp(ip[0], ip[1], ip[2], ip[3]+1); // speculation: it seems that MissionPlanner wants it +1
 IPAddress netmask(255, 255, 255, 0);
-#if WIRELESS_PROTOCOL == 1 // UDP
+  #if WIRELESS_PROTOCOL == 1 // UDP
     WiFiUDP udp;
-#else // TCP
+  #else // TCP
     WiFiServer server(port_tcp);
     WiFiClient client;
-#endif
+  #endif
 
 #elif (WIRELESS_PROTOCOL == 2) // WiFi UDPCl
 
@@ -161,7 +174,7 @@ IPAddress ip_gateway(ip_udpcl[0], ip_udpcl[1], ip_udpcl[2], 1); // x.x.x.1 is us
 IPAddress netmask(255, 255, 255, 0);
 WiFiUDP udp;
 
-#elif (WIRELESS_PROTOCOL == 3) // Bluetooth
+#elif (WIRELESS_PROTOCOL == 3) || !defined(MODULE_ESP01S) // Bluetooth
 
 BluetoothSerial SerialBT;
 
@@ -176,7 +189,7 @@ unsigned long serial_data_received_tfirst_ms;
 
 void serialFlushRx(void)
 {
-    while (SERIAL.available() > 0) { uint8_t c = SERIAL.read(); }
+    while (SERIALx.available() > 0) { uint8_t c = SERIALx.read(); }
 }
 
 
@@ -190,16 +203,18 @@ void setup()
     dbg_init();
     delay(500);
 
-    size_t rxbufsize = SERIAL.setRxBufferSize(2*1024); // must come before uart started, retuns 0 if it fails
-    size_t txbufsize = SERIAL.setTxBufferSize(512); // must come before uart started, retuns 0 if it fails
+    size_t rxbufsize = SERIALx.setRxBufferSize(2*1024); // must come before uart started, retuns 0 if it fails
+#if !defined(MODULE_ESP01S)
+    size_t txbufsize = SERIALx.setTxBufferSize(512); // must come before uart started, retuns 0 if it fails
+#endif    
 #ifdef SERIAL_RXD // if SERIAL_TXD is not defined the compiler will complain, so all good
   #ifdef USE_SERIAL_INVERTED
-    SERIAL.begin(baudrate, SERIAL_8N1, SERIAL_RXD, SERIAL_TXD, true);
+    SERIALx.begin(baudrate, SERIAL_8N1, SERIAL_RXD, SERIAL_TXD, true);
   #else
-    SERIAL.begin(baudrate, SERIAL_8N1, SERIAL_RXD, SERIAL_TXD);
+    SERIALx.begin(baudrate, SERIAL_8N1, SERIAL_RXD, SERIAL_TXD);
   #endif
 #else
-    SERIAL.begin(baudrate);
+    SERIALx.begin(baudrate);
 #endif
 //????used to work    pinMode(U1_RXD, INPUT_PULLUP); // important, at least in older versions Arduino serial lib did not do it
 
@@ -223,9 +238,16 @@ void setup()
     DBG_PRINT("channel: ");
     DBG_PRINTLN(WiFi.channel());
 
-  #ifdef WIFI_POWER
-    WiFi.setTxPower(WIFI_POWER); // set WiFi power, AP or STA must have been started, returns false if it fails
+  #if defined(MODULE_ESP01S)
+    #ifdef WIFI_POWER_ESP8266
+      WiFi.setOutputPower(WIFI_POWER_ESP8266); // set WiFi power, AP or STA must have been started, returns false if it fails
+    #endif
+  #else // ESP32
+    #ifdef WIFI_POWER_ESP32
+      WiFi.setTxPower(WIFI_POWER_ESP32); // set WiFi power, AP or STA must have been started, returns false if it fails
+    #endif
   #endif
+
   #if (WIRELESS_PROTOCOL == 1)
     udp.begin(port_udp);
   #else
@@ -250,12 +272,18 @@ void setup()
     DBG_PRINT("network ip address: ");
     DBG_PRINTLN(WiFi.localIP());
 
-  #ifdef WIFI_POWER
-    WiFi.setTxPower(WIFI_POWER); // set WiFi power, AP or STA must have been started, returns false if it fails
+  #if defined(MODULE_ESP01S)
+    #ifdef WIFI_POWER_ESP8266
+      WiFi.setOutputPower(WIFI_POWER_ESP8266); // set WiFi power, AP or STA must have been started, returns false if it fails
+    #endif
+  #else // ESP32
+    #ifdef WIFI_POWER_ESP32
+      WiFi.setTxPower(WIFI_POWER_ESP32); // set WiFi power, AP or STA must have been started, returns false if it fails
+    #endif
   #endif
     udp.begin(port_udpcl);
 
-#elif (WIRELESS_PROTOCOL == 3)
+#elif (WIRELESS_PROTOCOL == 3) || !defined(MODULE_ESP01S)
 //-- Bluetooth
 
     SerialBT.begin(bluetooth_device_name);
@@ -315,22 +343,22 @@ void loop()
 
     while (client.available()) {
         //uint8_t c = (uint8_t)client.read();
-        //SERIAL.write(c);
+        //SERIALx.write(c);
         int len = client.read(buf, sizeof(buf));
-        SERIAL.write(buf, len);
+        SERIALx.write(buf, len);
         is_connected = true;
         is_connected_tlast_ms = millis();
     }
 
     tnow_ms = millis(); // update it
-    int avail = SERIAL.available();
+    int avail = SERIALx.available();
     if (avail <= 0) {
         serial_data_received_tfirst_ms = tnow_ms;
     } else
     if ((tnow_ms - serial_data_received_tfirst_ms) > 10 || avail > 128) { // 10 ms at 57600 bps corresponds to 57 bytes, no chance for 128 bytes
         serial_data_received_tfirst_ms = tnow_ms;
 
-        int len = SERIAL.read(buf, sizeof(buf));
+        int len = SERIALx.read(buf, sizeof(buf));
         client.write(buf, len);
     }
 
@@ -340,20 +368,20 @@ void loop()
     int packetSize = udp.parsePacket();
     if (packetSize) {
         int len = udp.read(buf, sizeof(buf));
-        SERIAL.write(buf, len);
+        SERIALx.write(buf, len);
         is_connected = true;
         is_connected_tlast_ms = millis();
     }
 
     tnow_ms = millis(); // may not be relevant, but just update it
-    int avail = SERIAL.available();
+    int avail = SERIALx.available();
     if (avail <= 0) {
         serial_data_received_tfirst_ms = tnow_ms;
     } else
     if ((tnow_ms - serial_data_received_tfirst_ms) > 10 || avail > 128) { // 10 ms at 57600 bps corresponds to 57 bytes, no chance for 128 bytes
         serial_data_received_tfirst_ms = tnow_ms;
 
-        int len = SERIAL.read(buf, sizeof(buf));
+        int len = SERIALx.read(buf, sizeof(buf));
         udp.beginPacket(ip_udp, port_udp);
         udp.write(buf, len);
         udp.endPacket();
@@ -365,7 +393,7 @@ void loop()
     int packetSize = udp.parsePacket();
     if (packetSize) {
         int len = udp.read(buf, sizeof(buf));
-        SERIAL.write(buf, len);
+        SERIALx.write(buf, len);
         is_connected = true;
         is_connected_tlast_ms = millis();
     }
@@ -377,40 +405,40 @@ void loop()
     }
 
     tnow_ms = millis(); // may not be relevant, but just update it
-    int avail = SERIAL.available();
+    int avail = SERIALx.available();
     if (avail <= 0) {
         serial_data_received_tfirst_ms = tnow_ms;
     } else
     if ((tnow_ms - serial_data_received_tfirst_ms) > 10 || avail > 128) { // 10 ms at 57600 bps corresponds to 57 bytes, no chance for 128 bytes
         serial_data_received_tfirst_ms = tnow_ms;
 
-        int len = SERIAL.read(buf, sizeof(buf));
+        int len = SERIALx.read(buf, sizeof(buf));
         udp.beginPacket(udp.remoteIP(), udp.remotePort());
         udp.write(buf, len);
         udp.endPacket();
     }
 
-#elif (WIRELESS_PROTOCOL == 3)
+#elif (WIRELESS_PROTOCOL == 3) || !defined(MODULE_ESP01S)
 //-- Bluetooth
 
     int len = SerialBT.available();
     if (len > 0) {
         if (len > sizeof(buf)) len = sizeof(buf);
         for (int i = 0; i < len; i++) buf[i] = SerialBT.read();
-        SERIAL.write(buf, len);
+        SERIALx.write(buf, len);
         is_connected = true;
         is_connected_tlast_ms = millis();
     }
 
     tnow_ms = millis(); // may not be relevant, but just update it
-    int avail = SERIAL.available();
+    int avail = SERIALx.available();
     if (avail <= 0) {
         serial_data_received_tfirst_ms = tnow_ms;
     } else
     if ((tnow_ms - serial_data_received_tfirst_ms) > 10 || avail > 128) { // 10 ms at 57600 bps corresponds to 57 bytes, no chance for 128 bytes
         serial_data_received_tfirst_ms = tnow_ms;
 
-        int len = SERIAL.read(buf, sizeof(buf));
+        int len = SERIALx.read(buf, sizeof(buf));
         SerialBT.write(buf, len);
     }
 

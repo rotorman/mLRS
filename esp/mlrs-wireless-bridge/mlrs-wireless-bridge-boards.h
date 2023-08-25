@@ -1,5 +1,5 @@
 //*******************************************************
-// mLRS Wireless Bridge
+// mLRS Wireless Bridge for ESP32 & ESP8266
 // Copyright (c) www.olliw.eu, OlliW, OlliW42
 // License: GPL v3
 // https://www.gnu.org/licenses/gpl-3.0.de.html
@@ -94,6 +94,13 @@ https://shop.m5stack.com/products/atom-lite-esp32-development-kit
 http://docs.m5stack.com/en/core/atom_lite
 IO32/IO26: U0RXD/U0TXD, is remapped as Serial
 
+------------------------------
+ESP-01S
+------------------------------
+board: Generic ESP8266 Module
+http://www.ai-thinker.com/pro_view-88.html
+IO3/IO1: U0RXD/U0TXD is Serial
+
 */
 
 /*
@@ -102,6 +109,8 @@ ESP32:
 shortening GPIO15 to GND suppresses the bootloader preamble on Serial port
 GPIO15 = RTC_GPIO13
 */
+
+
 
 
 //-------------------------------------------------------
@@ -278,6 +287,21 @@ GPIO15 = RTC_GPIO13
     #define PIN_NEOPIXEL  27
 
 
+//-- ESP-01S
+#elif defined MODULE_ESP01S
+    #ifndef ESP8266 // ARDUINO_BOARD != Generic ESP8266 Module
+        #error Select board Generic ESP8266 Module!
+    #endif
+
+    #undef USE_SERIAL_DBG1
+    #undef USE_SERIAL1_DBG
+    #undef USE_SERIAL2_DBG
+
+    #ifndef LED_IO
+        #define LED_IO  2
+    #endif
+
+
 //-- Generic
 #else
     #ifdef LED_IO  
@@ -320,13 +344,13 @@ GPIO15 = RTC_GPIO13
 
 
 #if defined USE_SERIAL_DBG1
-    #define SERIAL Serial
+    #define SERIALx Serial
     #define DBG Serial1
     #define DBG_PRINT(x) Serial1.print(x)
     #define DBG_PRINTLN(x) Serial1.println(x)
 
 #elif defined USE_SERIAL1_DBG
-    #define SERIAL Serial1
+    #define SERIALx Serial1
 //    #define SERIAL_RXD  9 // = RX1
 //    #define SERIAL_TXD  10 // = TX1
     #define DBG Serial
@@ -334,13 +358,13 @@ GPIO15 = RTC_GPIO13
     #define DBG_PRINTLN(x) Serial.println(x)
 
 #elif defined USE_SERIAL2_DBG
-    #define SERIAL Serial2
+    #define SERIALx Serial2
     #define DBG Serial
     #define DBG_PRINT(x) Serial.print(x)
     #define DBG_PRINTLN(x) Serial.println(x)
 
 #else    
-    #define SERIAL Serial
+    #define SERIALx Serial
     #define DBG_PRINT(x)
     #define DBG_PRINTLN(x)
 #endif
