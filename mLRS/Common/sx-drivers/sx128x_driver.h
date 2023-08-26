@@ -10,7 +10,7 @@
 #define SX128X_DRIVER_H
 #pragma once
 
-extern uint32_t millis32();
+extern volatile uint32_t millis32();
 
 //-------------------------------------------------------
 // SX Driver
@@ -367,16 +367,24 @@ class Sx128xDriver : public Sx128xDriverCommon
 #ifdef SX_BUSY
     void WaitOnBusy(void) override
     {
-        uint32_t tstartwait_ms = millis32();
-        while (sx_busy_read()) {
-            if (millis32() - tstartwait_ms > 20) { // we are stuck, so rescue
+        volatile uint32_t tstartwait_ms = millis32();
+
+        volatile bool bCheck;
+        volatile uint32_t nowms;
+
+        do {
+            bCheck = sx_busy_read();
+            nowms = millis32();
+            if (((int32_t)(nowms - tstartwait_ms)) > 20) { // we are stuck, so rescue
 #ifdef TX_FRM303_F072CB
                 gpio_low(IO_PB7); // Turn red LED permanently on
 #endif
-            	break;
+                bCheck = false;
+                break;
             }
-        	//__NOP();
-        }
+
+
+        } while(bCheck);
     }
 #else
     uint32_t timer_us_tmo = 0;
