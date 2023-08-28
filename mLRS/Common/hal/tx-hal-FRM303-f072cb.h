@@ -188,15 +188,25 @@ void sx_dio_init_exti_isroff(void)
     NVIC_EnableIRQ(SX_DIO_EXTI_IRQn);
 }
 
-void sx_dio_enable_exti_isr(void)
+void sx_dio_enable_run_exti_isr(void)
 {
-    LL_EXTI_ClearFlag_0_31(SX_DIO_EXTI_LINE_x);
     LL_EXTI_EnableIT_0_31(SX_DIO_EXTI_LINE_x);
+}
+
+void sx_dio_disable_run_exti_isr(void)
+{
+    LL_EXTI_DisableIT_0_31(SX_DIO_EXTI_LINE_x);
 }
 
 void sx_dio_exti_isr_clearflag(void)
 {
     LL_EXTI_ClearFlag_0_31(SX_DIO_EXTI_LINE_x);
+}
+
+void sx_dio_enable_exti_isr(void)
+{
+	sx_dio_exti_isr_clearflag();
+	sx_dio_enable_run_exti_isr();
 }
 
 
